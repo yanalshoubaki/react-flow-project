@@ -12,7 +12,7 @@ import {
 import { useState } from "react";
 
 type AddNodeProps = {
-  deleteNode: (name: string, deleteTree: "yes" | "no") => void;
+  deleteNode: (id: string, type: "yes" | "no") => void;
 
   data: {
     label: string;

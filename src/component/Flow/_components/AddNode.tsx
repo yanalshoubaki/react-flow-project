@@ -13,10 +13,10 @@ import {
 import { useState } from "react";
 
 type AddNodeProps = {
-  createChild: (name: string, gender: string) => void;
+  createNode: (name: string, gender: string) => void;
 } & ReturnType<typeof useDisclosure>;
 
-const AddNode = ({ isOpen, onOpenChange, createChild }: AddNodeProps) => {
+const AddNode = ({ isOpen, onOpenChange, createNode }: AddNodeProps) => {
   const [data, setData] = useState<{
     name: string | null;
     gender: string | null;
@@ -42,20 +42,14 @@ const AddNode = ({ isOpen, onOpenChange, createChild }: AddNodeProps) => {
                 variant="bordered"
                 placeholder="Name of the children"
                 onChange={(e) =>
-                  setData({
-                    ...data,
-                    name: e.target.value,
-                  })
+                  setData((prev) => ({ ...prev, name: e.target.value }))
                 }
               />
               <div>
                 <RadioGroup
                   label="Select child gender"
                   onValueChange={(e) =>
-                    setData({
-                      ...data,
-                      gender: e,
-                    })
+                    setData((prev) => ({ ...prev, gender: e }))
                   }
                 >
                   <Radio value="male">Male</Radio>
@@ -69,9 +63,8 @@ const AddNode = ({ isOpen, onOpenChange, createChild }: AddNodeProps) => {
               </Button>
               <Button
                 color="primary"
-                disabled={data.name == null || data.gender == null}
                 onPress={() => {
-                  createChild(data.name as string, data.gender as string);
+                  createNode(data.name!, data.gender!);
                   onClose();
                 }}
               >
