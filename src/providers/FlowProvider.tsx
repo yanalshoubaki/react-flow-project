@@ -1,5 +1,5 @@
 import { PropsWithChildren } from 'react'
-import { ReactFlowProvider } from 'reactflow'
+import { ReactFlowProvider } from '@xyflow/react'
 
 const FlowProvider = ({children}: PropsWithChildren) => {
   return (
