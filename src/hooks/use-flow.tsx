@@ -1,77 +1,48 @@
-import { useState } from "react";
 import {
   getConnectedEdges,
+  getIncomers,
   getOutgoers,
   Node,
-  useReactFlow,
-} from "reactflow";
-import { hasEdge } from "../lib/utlis";
+} from "@xyflow/react";
 import useFlowStore from "../store/useFlowStore";
+import { useCallback } from "react";
 const useFlow = () => {
-  const { nodes, edges, setNodes, setEdges } = useFlowStore();
-  const instance = useReactFlow();
-  const [parent, setParent] = useState<string | null>(null);
-  const deleteNode = (nodeId: string, deleteTree: "yes" | "no") => {
-    if (deleteTree === "yes") {
-      // delete all children
-      const node = nodes.find((node) => node.id === nodeId);
-      instance.deleteElements({
-        nodes: getOutgoers(node as Node, nodes, edges),
-        edges: getConnectedEdges(nodes, edges),
-      });
+  const { nodes, edges, onNodesChange, setEdges, onConnect, onEdgesChange } =
+    useFlowStore();
 
-      console.log({
-        nodes: getOutgoers(node as Node, nodes, edges),
-        edges: getConnectedEdges(nodes, edges),
-      }, "tes2t");
-    } else {
-      const newNodes = nodes.filter((node) => node.id !== nodeId);
-      const newEdges = edges.filter((edge) => edge.source !== nodeId);
-      setNodes(newNodes);
-      setEdges(newEdges);
-    }
-  };
-  const createChild = (name: string, gender: string) => {
-    const lastNodes = nodes[nodes.length - 1];
-    let newNode = {
-      id: `${parseInt(nodes[nodes.length - 1].id) + 1}`,
-      data: { label: name, gender, deleteNode: deleteNode },
-      type: "childNode",
-      position: {
-        x: lastNodes.position.x + 100,
-        y: lastNodes.position.y + 100,
-      },
-    } as Node;
-    if (hasEdge(edges, parent as string)) {
-      // if has edge get last siblings
-      const lastSiblings = edges.filter((edge) => edge.source === parent).pop();
-      if (lastSiblings) {
-        const node = nodes.find((node) => node.id === lastSiblings.target);
-        if (node) {
-          newNode.position = {
-            x: node.position.x - 250,
-            y: node.position.y,
-          };
-        }
-      }
-    }
-    setNodes([...nodes, newNode]);
-    setEdges([
-      ...edges,
-      {
-        id: `${parent}-${newNode.id}`,
-        source: parent as string,
-        target: newNode.id,
-      },
-    ]);
-  };
+  const onNodesDelete = useCallback(
+    (deleted: Node[]) => {
+      setEdges(
+        deleted.reduce((acc, node) => {
+          const incomers = getIncomers(node, nodes, edges);
+          const outgoers = getOutgoers(node, nodes, edges);
+          const connectedEdges = getConnectedEdges([node], edges);
 
+          const remainingEdges = acc.filter(
+            (edge) => !connectedEdges.includes(edge)
+          );
+
+          const createdEdges = incomers.flatMap(({ id: source }) =>
+            outgoers.map(({ id: target }) => ({
+              id: `${source}->${target}`,
+              source,
+              target,
+            }))
+          );
+
+          return [...remainingEdges, ...createdEdges];
+        }, edges)
+      );
+    },
+    [nodes, edges]
+  );
   return {
     nodes,
     edges,
-    createChild,
-    setParent,
-    deleteNode: deleteNode,
+    onNodesChange,
+    onNodesDelete,
+    onConnect,
+    onEdgesChange,
   };
 };
 export default useFlow;
